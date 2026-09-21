@@ -3,8 +3,18 @@
   // 增删订阅只需要改这个文件，然后重新运行合并即可
   // 每一项: id=唯一标识(英文), name=显示名, enabled=是否启用
   //         url=主地址, fallbacks=备用镜像地址(主地址失败时依次尝试)
+  // ⚠️ 顺序即优先级: 排在前面的源, 其规则组元信息(描述/分类归属等)在合并时优先保留
   // 判断订阅是否还在维护: 仓库最近提交时间 / 订阅内 version 字段是否持续增长
   sources: [
+    {
+      // 主力源: 更新最频繁、覆盖最大, 放首位
+      id: "linarm",
+      name: "Lin-arm(主力)",
+      url: "https://raw.githubusercontent.com/Lin-arm/GKD_subscription/main/dist/gkd.json5",
+      fallbacks: ["https://cdn.jsdelivr.net/gh/Lin-arm/GKD_subscription@main/dist/gkd.json5"],
+      enabled: true,
+      note: "原主力订阅, 活跃维护, 规模最大(977应用)",
+    },
     {
       id: "aoguai",
       name: "aoguai(默认订阅)",
@@ -28,14 +38,6 @@
       fallbacks: [],
       enabled: true,
       note: "活跃维护, 覆盖面较小, 作补充",
-    },
-    {
-      id: "linarm",
-      name: "Lin-arm",
-      url: "https://raw.githubusercontent.com/Lin-arm/GKD_subscription/main/dist/gkd.json5",
-      fallbacks: ["https://cdn.jsdelivr.net/gh/Lin-arm/GKD_subscription@main/dist/gkd.json5"],
-      enabled: true,
-      note: "用户指定添加",
     },
   ],
 }
