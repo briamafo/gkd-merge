@@ -60,8 +60,7 @@ https://cdn.jsdelivr.net/gh/<你的用户名>/<仓库名>@main/dist/merged_gkd.j
 | aoguai（默认订阅） | 活跃维护 | ✅ 开 |
 | 甘霖 ganlinte | 活跃维护 | ✅ 开 |
 | 梦念逍遥 | 活跃维护（补充型） | ✅ 开 |
-| Adpro | 维护终止（规则量大） | ❌ 关 |
-| AIsouler | 已停止维护（规则量最大） | ❌ 关 |
-| GKD 官方 | 2024-04 归档 | ❌ 关 |
+| Lin-arm (id667) | 活跃维护，规模最大（977 应用） | ✅ 开 |
 
 判断某个源是否还活着：看仓库最近提交时间，或订阅文件里的 `version` 是否还在涨。
+曾经主流的 Adpro / AIsouler / GKD 官方订阅均已停止维护，如需找回可在 git 历史里查 `sources.json5` 的旧地址。
