@@ -1,0 +1,57 @@
+{
+  // ===== GKD 订阅源配置 =====
+  // 增删订阅只需要改这个文件，然后重新运行合并即可
+  // 每一项: id=唯一标识(英文), name=显示名, enabled=是否启用
+  //         url=主地址, fallbacks=备用镜像地址(主地址失败时依次尝试)
+  // 判断订阅是否还在维护: 仓库最近提交时间 / 订阅内 version 字段是否持续增长
+  sources: [
+    {
+      id: "aoguai",
+      name: "aoguai(默认订阅)",
+      url: "https://cdn.jsdelivr.net/gh/aoguai/subscription@main/dist/gkd.json5",
+      fallbacks: ["https://registry.npmmirror.com/@aoguai/subscription/latest/files/dist/gkd.json5"],
+      enabled: true,
+      note: "活跃维护",
+    },
+    {
+      id: "ganlin",
+      name: "甘霖",
+      url: "https://cdn.jsdelivr.net/gh/ganlinte/GKD-subscription@main/dist/ganlin_gkd.json5",
+      fallbacks: ["https://ghproxy.net/https://raw.githubusercontent.com/ganlinte/GKD-subscription/main/dist/ganlin_gkd.json5"],
+      enabled: true,
+      note: "活跃维护",
+    },
+    {
+      id: "mengnian",
+      name: "梦念逍遥",
+      url: "https://cdn.jsdelivr.net/gh/MengNianxiaoyao/GKD-subscription@main/dist/gkd.json5",
+      fallbacks: [],
+      enabled: true,
+      note: "活跃维护, 覆盖面较小, 作补充",
+    },
+    {
+      id: "adpro",
+      name: "Adpro",
+      url: "https://registry.npmmirror.com/@adpro/gkd_subscription/latest/files/dist/Adpro_gkd.json5",
+      fallbacks: ["https://cdn.jsdelivr.net/gh/Adpro-Team/GKD_subscription@main/dist/Adpro_gkd.json5"],
+      enabled: false,
+      note: "订阅名已标注[维护终止], 规则量大(678应用)但不再更新, 想要覆盖面可自行开启",
+    },
+    {
+      id: "aisouler",
+      name: "AIsouler",
+      url: "https://registry.npmmirror.com/@aisouler/gkd_subscription/latest/files/dist/AIsouler_gkd.json5",
+      fallbacks: ["https://cdn.jsdelivr.net/gh/AIsouler/GKD_subscription@main/dist/AIsouler_gkd.json5"],
+      enabled: false,
+      note: "订阅名已标注[已停止维护], 规则量最大(886应用), 想要覆盖面可自行开启",
+    },
+    {
+      id: "official",
+      name: "GKD官方",
+      url: "https://registry.npmmirror.com/@gkd-kit/subscription/latest/files/dist/gkd.json5",
+      fallbacks: ["https://cdn.jsdelivr.net/gh/gkd-kit/subscription@main/dist/gkd.json5"],
+      enabled: false,
+      note: "官方订阅 2024-04 已归档停更, 仅作老规则补充",
+    },
+  ],
+}

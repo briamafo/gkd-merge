@@ -1,0 +1,37 @@
+name: Update GKD merged subscription
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # UTC 1:00 = 北京时间每天 09:00
+  workflow_dispatch: # 支持手动触发
+
+permissions:
+  contents: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install deps
+        run: npm install json5 --no-save --no-audit --no-fund
+
+      - name: Merge subscriptions
+        run: node merge.mjs
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist sources
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "chore: update merged gkd subscription $(date +%F)"
+            git push
+          fi
