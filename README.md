@@ -16,8 +16,9 @@
 gkd-merge/
 ├── sources.json5   <- 订阅源配置（唯一需要日常编辑的文件）
 ├── merge.mjs       <- 合并脚本（无需改动）
-├── update.cmd      <- Windows 一键合并
-├── sources/        <- 各源缓存（自动生成）
+├── update.cmd      <- Windows 一键合并（本地手动更新用）
+├── sync.cmd        <- 一键提交并推送 GitHub（本地强制覆盖远端）
+├── sources/        <- 各源缓存（自动生成，不入库）
 └── dist/
     └── merged_gkd.json5   <- 合并产物（手机订阅这个）
 ```
@@ -25,22 +26,27 @@ gkd-merge/
 ## 合并去重逻辑
 
 - 按「应用包名 → 规则组名」聚合，同名规则组合并为一条
-- 组内规则按完整指纹（键排序序列化）去重，不会丢规则
+- 跨组规则去重：同一 App 下，指纹完全相同的规则（跨源、跨组名）只保留第一次出现的（按源优先级，Lin-arm 最优先），被清空的组删除
 - 分类(categories)取并集；规则组 key 重新编号保证合法
-- 输出为标准 JSON（合法的 JSON5），GKD 可直接解析
-- 运行结束会打印去重统计，并自校验输出文件
+- 输出为标准 JSON（合法的 JSON5），GKD 可直接解析，输出前自校验
+- 4 个源并行拉取，全部失败时回退用上次的本地缓存
 
 ## 日常自动更新方案（三选一）
 
-### 方案 A：GitHub Actions 自动更新（推荐，全免费）
+### 方案 A：GitHub Actions 自动更新（当前使用中）
 
-1. 把整个 `gkd-merge` 目录推到一个 GitHub 仓库（`.github/workflows/update.yml` 已备好）
-2. Actions 每天北京时间 09:00 自动拉源 → 合并 → 提交
-3. 手机 GKD 添加订阅链接（二选一，国内可用镜像）：
+- 仓库：https://github.com/briamafo/gkd-merge
+- Actions 每天北京时间 9:00 / 15:00 / 21:00 自动拉源 → 合并 → 提交 → 刷新 jsDelivr 缓存
+- 手机 GKD 订阅链接（推荐 ghproxy，无缓存问题）：
 
 ```
-https://ghproxy.net/https://raw.githubusercontent.com/<你的用户名>/<仓库名>/main/dist/merged_gkd.json5
-https://cdn.jsdelivr.net/gh/<你的用户名>/<仓库名>@main/dist/merged_gkd.json5
+https://ghproxy.net/https://raw.githubusercontent.com/briamafo/gkd-merge/main/dist/merged_gkd.json5
+```
+
+备用（jsDelivr，最长 12h 缓存，Actions 每次推送后会自动清）：
+
+```
+https://cdn.jsdelivr.net/gh/briamafo/gkd-merge@main/dist/merged_gkd.json5
 ```
 
 ### 方案 B：WorkBuddy 发布在线链接（无 GitHub）

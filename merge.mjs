@@ -83,14 +83,26 @@ function mergeAll(subs) {
   const apps = [];
   for (const target of [...appsMap.values()].sort((a, b) => a.id.localeCompare(b.id))) {
     stats.apps++;
+    // 跨组规则去重: 同一 App 下指纹相同的规则只保留第一次出现的(按源优先级)
+    const seenRules = new Set();
     const groups = [];
     let key = 0;
     for (const [bname, bucket] of target.groupsByName) {
       const g = { ...bucket.g };
-      const rules = bucket.rulesMap.size ? [...bucket.rulesMap.values()] : undefined;
-      // 与桶内原始规则数对比统计去重
       const rawLen = Array.isArray(bucket.g.rules) ? bucket.g.rules.length : 0;
-      if (rules && rules.length < rawLen) stats.dupRules += rawLen - rules.length;
+      let rules;
+      if (bucket.rulesMap.size) {
+        rules = [...bucket.rulesMap.values()].filter((r) => {
+          const fp = stableStringify(r);
+          if (seenRules.has(fp)) return false;
+          seenRules.add(fp);
+          return true;
+        });
+      }
+      // 原本有规则但去重后清空的组直接丢弃
+      if (rawLen > 0 && (!rules || rules.length === 0)) {
+        continue;
+      }
       delete g.key;
       g.key = key++;
       if (rules) g.rules = rules;
@@ -101,6 +113,7 @@ function mergeAll(subs) {
     apps.push({ id: target.id, name: target.name, groups });
   }
   stats.dupGroups = stats.groupsRaw - stats.groupsOut;
+  stats.dupRules = stats.rulesRaw - stats.rulesOut;
   const version = Number(
     new Date().toISOString().slice(0, 10).replace(/-/g, "")
   );
@@ -119,17 +132,21 @@ function mergeAll(subs) {
 async function main() {
   mkdirSync(SOURCES_DIR, { recursive: true });
   mkdirSync(DIST_DIR, { recursive: true });
-  const subs = [];
-  for (const src of CONFIG.sources.filter((s) => s.enabled)) {
-    console.log(`拉取 ${src.name} ...`);
-    const got = await fetchSource(src);
-    if (!got) { console.log(`  [${src.id}] 全部地址失败且无缓存, 跳过`); continue; }
-    const parsed = JSON5.parse(got.text);
-    const nApps = (parsed.apps || []).length;
-    const nGroups = (parsed.apps || []).reduce((s, a) => s + (a.groups || []).length, 0);
-    console.log(`  [${src.id}] name=${parsed.name} version=${parsed.version} 应用=${nApps} 规则组=${nGroups}${got.fromCache ? " (缓存)" : ""}`);
-    subs.push(parsed);
-  }
+  const enabled = CONFIG.sources.filter((s) => s.enabled);
+  // 并行拉取全部源, 之后按配置顺序(优先级)依次处理
+  const results = await Promise.all(
+    enabled.map(async (src) => {
+      console.log(`拉取 ${src.name} ...`);
+      const got = await fetchSource(src);
+      if (!got) { console.log(`  [${src.id}] 全部地址失败且无缓存, 跳过`); return null; }
+      const parsed = JSON5.parse(got.text);
+      const nApps = (parsed.apps || []).length;
+      const nGroups = (parsed.apps || []).reduce((s, a) => s + (a.groups || []).length, 0);
+      console.log(`  [${src.id}] name=${parsed.name} version=${parsed.version} 应用=${nApps} 规则组=${nGroups}${got.fromCache ? " (缓存)" : ""}`);
+      return parsed;
+    })
+  );
+  const subs = results.filter(Boolean);
   if (subs.length === 0) { console.error("没有任何可用订阅源"); process.exit(1); }
   const merged = mergeAll(subs);
   const { stats, ...out } = merged;
