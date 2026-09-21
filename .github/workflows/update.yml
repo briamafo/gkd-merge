@@ -2,7 +2,9 @@ name: Update GKD merged subscription
 
 on:
   schedule:
-    - cron: "0 1 * * *" # UTC 1:00 = 北京时间每天 09:00
+    # 每天 3 次: UTC 1/7/13 = 北京时间 9:00 / 15:00 / 21:00
+    # 源订阅更新时间不固定, 多跑几次保证规则新鲜度
+    - cron: "0 1,7,13 * * *"
   workflow_dispatch: # 支持手动触发
 
 permissions:
