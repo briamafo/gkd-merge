@@ -2,3 +2,7 @@ node_modules/
 sources/
 *.log
 *.ps1
+dist/snap*.json5
+dist/prev_backup.json5
+debug_*.mjs
+diff.mjs

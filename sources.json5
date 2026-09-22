@@ -1,4 +1,9 @@
 {
+  // ===== 合并选项 =====
+  // stripRuleMeta: true = 去掉规则的快照链接(snapshotUrls/exampleUrls), 产物体积约减小 15%,
+  //                代价是 GKD 里看不到规则的快照截图; 默认 false(保留)
+  stripRuleMeta: false,
+
   // ===== GKD 订阅源配置 =====
   // 增删订阅只需要改这个文件，然后重新运行合并即可
   // 每一项: id=唯一标识(英文), name=显示名, enabled=是否启用

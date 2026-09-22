@@ -1,7 +1,7 @@
 // GKD 订阅合并去重工具
 // 用法: node merge.mjs  (在 gkd-merge 目录下运行)
 // 输出: dist/merged_gkd.json5
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import JSON5 from "json5";
@@ -21,10 +21,83 @@ function stableStringify(v) {
   return "{" + keys.map((k) => JSON.stringify(k) + ":" + stableStringify(v[k])).join(",") + "}";
 }
 
-// ---------- 下载(带缓存与备用地址) ----------
+// ---------- FNV-1a 哈希 -> 稳定正整数 key ----------
+function hash32(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function makeKeyPicker() {
+  const used = new Set();
+  return (seed) => {
+    let k = hash32(seed) % 2000000000;
+    while (used.has(k)) k = (k + 1) % 2000000000;
+    used.add(k);
+    return k;
+  };
+}
+
+// ---------- 规则归一化与指纹 ----------
+// 不同作者的写法差异: 规则名(name)、key 编号、快照链接、选择器里的空格/引号风格
+// 这些差异不影响实际点击行为 -> 计算指纹时统一剔除/归一, 输出时仍保留原始规则(首现者)
+// 注意: 只做"文本层归一", 不做语义层等价判断(两条写法完全不同的规则是否点同一个按钮, 无法可靠自动判定)
+const RULE_META_FIELDS = new Set(["key", "name", "desc", "snapshotUrls", "exampleUrls", "sr", "comment", "tags"]);
+function normalizeSelector(v) {
+  if (Array.isArray(v)) return v.map(normalizeSelector);
+  if (typeof v !== "string") return v;
+  return v.replace(/\s+/g, " ").trim().replace(/'([^']*)'/g, '"$1"');
+}
+function normalizeRule(r) {
+  if (!r || typeof r !== "object" || Array.isArray(r)) return r;
+  const out = {};
+  for (const k of Object.keys(r).sort()) {
+    if (RULE_META_FIELDS.has(k)) continue;
+    const v = r[k];
+    out[k] = k === "matches" || k === "excludeMatches" || k === "anyMatches" ? normalizeSelector(v) : v;
+  }
+  return out;
+}
+function ruleFingerprint(r) {
+  return stableStringify(normalizeRule(r));
+}
+
+// ---------- 可选瘦身: 去掉展示型元数据(快照链接), 约省 15% 体积 ----------
+// GKD 运行时不需要 snapshotUrls/exampleUrls(仅用于查看规则快照)
+// 在 sources.json5 顶层加 stripRuleMeta: true 即可开启, 默认关闭
+const STRIP_RULE_META = CONFIG.stripRuleMeta === true;
+function stripRuleMeta(r) {
+  if (!STRIP_RULE_META || !r || typeof r !== "object" || Array.isArray(r)) return r;
+  if (r.snapshotUrls === undefined && r.exampleUrls === undefined) return r;
+  const { snapshotUrls, exampleUrls, ...rest } = r;
+  return rest;
+}
+
+// ---------- 规则 key 唯一化 ----------
+// 各源的规则 key 都是各自从 0 编号的, 合并到同一组会撞车(重复 key 会导致 GKD 解析/校验失败)
+// 策略: 保留首次出现的 key, 冲突的用「作用域+规则指纹」哈希生成稳定 key
+function ensureUniqueRuleKeys(scope, rules) {
+  if (!Array.isArray(rules)) return rules;
+  const seen = new Set();
+  return rules.map((r) => {
+    if (!r || typeof r !== "object" || r.key === undefined) return r;
+    if (!seen.has(r.key)) {
+      seen.add(r.key);
+      return r;
+    }
+    let k = hash32(scope + "|" + stableStringify(r)) % 2000000000;
+    while (seen.has(k)) k = (k + 1) % 2000000000;
+    seen.add(k);
+    return { ...r, key: k };
+  });
+}
+
+// ---------- 下载(带重试/备用地址/缓存) ----------
 async function fetchSource(src) {
   const cachePath = join(SOURCES_DIR, `${src.id}.json5`);
-  const urls = [src.url, ...src.fallbacks];
+  const urls = [...new Set([src.url, ...src.fallbacks, src.url, ...src.fallbacks])]; // 每个地址重试一次
   for (const u of urls) {
     try {
       const res = await fetch(u, { redirect: "follow", signal: AbortSignal.timeout(60000) });
@@ -39,7 +112,8 @@ async function fetchSource(src) {
     }
   }
   if (existsSync(cachePath)) {
-    console.log(`  [${src.id}] 使用本地缓存`);
+    const ageH = (Date.now() - statSync(cachePath).mtimeMs) / 3600000;
+    console.log(`  [${src.id}] 使用本地缓存 (${ageH.toFixed(1)}h 前)${ageH > 48 ? "  ⚠️ 缓存超过48小时, 规则可能过期" : ""}`);
     return { src, text: readFileSync(cachePath, "utf8"), fromCache: true };
   }
   return null;
@@ -47,13 +121,27 @@ async function fetchSource(src) {
 
 // ---------- 合并 ----------
 function mergeAll(subs) {
-  const stats = { apps: 0, groupsRaw: 0, groupsOut: 0, rulesRaw: 0, rulesOut: 0, dupGroups: 0, dupRules: 0 };
+  const stats = { apps: 0, groupsRaw: 0, groupsOut: 0, rulesRaw: 0, rulesOut: 0, dupGroups: 0, dupRules: 0, globalRaw: 0, globalOut: 0 };
   // 分类合并
   const catMap = new Map();
   const appsMap = new Map(); // appId -> { id, name, groupsByName: Map }
+  const ggMap = new Map(); // 全局规则组: name -> { g, rulesMap }
   for (const sub of subs) {
     for (const cat of sub.categories || []) {
       if (!catMap.has(cat.key)) catMap.set(cat.key, { key: cat.key, name: cat.name ?? cat.key, enableOrder: cat.enableOrder });
+    }
+    // 全局规则组合并(名字聚合, 规则指纹去重, 首个源的组元信息优先)
+    for (const g of sub.globalGroups || []) {
+      stats.globalRaw++;
+      const ruleArr = Array.isArray(g.rules) ? g.rules : [];
+      const gname = (g.name || "").trim();
+      const bkey = gname || `__anon_${stableStringify(g).slice(0, 40)}`;
+      let bucket = ggMap.get(bkey);
+      if (!bucket) {
+        bucket = { g, rulesMap: new Map() };
+        ggMap.set(bkey, bucket);
+      }
+      for (const r of ruleArr) bucket.rulesMap.set(ruleFingerprint(r), r);
     }
     for (const app of sub.apps || []) {
       if (!app.id) continue;
@@ -74,9 +162,30 @@ function mergeAll(subs) {
           bucket = { g, rulesMap: new Map() };
           target.groupsByName.set(bucketKey, bucket);
         }
-        for (const r of ruleArr) bucket.rulesMap.set(stableStringify(r), r);
+        for (const r of ruleArr) bucket.rulesMap.set(ruleFingerprint(r), r);
       }
     }
+  }
+  // 组装全局规则组(跨桶规则指纹去重; key 由名字哈希生成, 跨版本稳定)
+  const globalGroups = [];
+  const seenGlobalRules = new Set();
+  const pickGlobalKey = makeKeyPicker();
+  for (const [bname, bucket] of ggMap) {
+    const g = { ...bucket.g };
+    delete g.key;
+    g.key = pickGlobalKey("global|" + bname);
+    if (bucket.rulesMap.size) {
+      g.rules = [...bucket.rulesMap.values()].filter((r) => {
+        const fp = ruleFingerprint(r);
+        if (seenGlobalRules.has(fp)) return false;
+        seenGlobalRules.add(fp);
+        return true;
+      });
+      g.rules = ensureUniqueRuleKeys("global|" + bname, g.rules).map(stripRuleMeta);
+      stats.rulesOut += g.rules.length;
+    }
+    globalGroups.push(g);
+    stats.globalOut++;
   }
   // 组装输出
   const categories = [...catMap.values()];
@@ -85,26 +194,29 @@ function mergeAll(subs) {
     stats.apps++;
     // 跨组规则去重: 同一 App 下指纹相同的规则只保留第一次出现的(按源优先级)
     const seenRules = new Set();
+    // key 由「应用id+组名」哈希生成, 跨版本稳定 -> GKD 里手动开关状态不因更新丢失
+    const pickKey = makeKeyPicker();
     const groups = [];
-    let key = 0;
     for (const [bname, bucket] of target.groupsByName) {
       const g = { ...bucket.g };
       const rawLen = Array.isArray(bucket.g.rules) ? bucket.g.rules.length : 0;
       let rules;
-      if (bucket.rulesMap.size) {
-        rules = [...bucket.rulesMap.values()].filter((r) => {
-          const fp = stableStringify(r);
-          if (seenRules.has(fp)) return false;
-          seenRules.add(fp);
-          return true;
-        });
-      }
+    if (bucket.rulesMap.size) {
+      rules = [...bucket.rulesMap.values()].filter((r) => {
+        const fp = ruleFingerprint(r);
+        if (seenRules.has(fp)) return false;
+        seenRules.add(fp);
+        return true;
+      });
+    }
+    // 组内规则 key 唯一化(避免多源合并后 key 撞车)
+    if (rules) rules = ensureUniqueRuleKeys(target.id + "|" + bname, rules).map(stripRuleMeta);
       // 原本有规则但去重后清空的组直接丢弃
       if (rawLen > 0 && (!rules || rules.length === 0)) {
         continue;
       }
       delete g.key;
-      g.key = key++;
+      g.key = pickKey(target.id + "|" + bname);
       if (rules) g.rules = rules;
       groups.push(g);
       stats.groupsOut++;
@@ -117,15 +229,43 @@ function mergeAll(subs) {
   const version = Number(
     new Date().toISOString().slice(0, 10).replace(/-/g, "")
   );
-  return {
+  const merged = {
     id: 99,
     name: "Merged-主流订阅合集",
     version,
     author: "WorkBuddy merge tool",
     categories,
     apps,
-    stats,
   };
+  if (globalGroups.length) merged.globalGroups = globalGroups;
+  return { stats, ...merged };
+}
+
+// ---------- 版本号: 内容变化才递增 ----------
+// 内容与上一次产物完全一致 -> 沿用旧版本号(线上文件字节不变, GKD 显示"无更新"是准确的)
+// 内容有变化 -> 递增
+// ⚠️ version 必须 < 2^31(2147483647): GKD 内部按 32 位整数解析, 超出会"解析文本失败"
+// 因此采用「Unix 分钟数」(约 2980 万, 约公元 6000 年前都不会溢出) 作为时间基准
+const INT32_MAX = 2147483647;
+function computeVersion(prevPath, body) {
+  const timeBased = Math.floor(Date.now() / 60000);
+  let prevVersion = 0;
+  let prevBody = null;
+  try {
+    if (existsSync(prevPath)) {
+      const prev = JSON5.parse(readFileSync(prevPath, "utf8"));
+      prevVersion = Number(prev.version) || 0;
+      if (prevVersion > INT32_MAX) prevVersion = 0; // 修正历史上超限的版本号
+      delete prev.version;
+      prevBody = stableStringify(prev);
+    }
+  } catch {}
+  // 规范化后再比较: 内存对象可能带 undefined 值的键, 写文件时会被 JSON.stringify 丢弃,
+  // 不做规范化会导致每次都误判为"内容有变化"
+  const currBody = stableStringify(JSON.parse(JSON.stringify(body)));
+  // 内容一致且旧版本号合法 -> 沿用(产物字节不变, 不产生空提交); 否则重新生成合法版本号
+  if (prevBody !== null && prevBody === currBody && prevVersion > 0) return { version: prevVersion, changed: false };
+  return { version: Math.min(INT32_MAX, Math.max(timeBased, prevVersion + 1)), changed: true };
 }
 
 // ---------- 主流程 ----------
@@ -151,15 +291,23 @@ async function main() {
   const merged = mergeAll(subs);
   const { stats, ...out } = merged;
   const outPath = join(DIST_DIR, "merged_gkd.json5");
-  writeFileSync(outPath, JSON.stringify(out, null, 1), "utf8");
+  // 版本号: 内容无变化则沿用旧版本(产物字节一致, 不会产生无意义的提交)
+  const body = { id: out.id, name: out.name, author: out.author, categories: out.categories, apps: out.apps };
+  if (out.globalGroups) body.globalGroups = out.globalGroups;
+  const { version, changed } = computeVersion(outPath, body);
+  const finalOut = { id: out.id, name: out.name, version, author: out.author, categories: out.categories, apps: out.apps };
+  if (out.globalGroups) finalOut.globalGroups = out.globalGroups;
+  writeFileSync(outPath, JSON.stringify(finalOut, null, 1), "utf8");
   // 自校验
   JSON5.parse(readFileSync(outPath, "utf8"));
   console.log("\n===== 合并完成 =====");
+  console.log(`内容变化: ${changed ? "有(版本号已递增)" : "无(版本号沿用, 手机端会显示无更新)"}`);
   console.log(`订阅源: ${subs.length} 个`);
   console.log(`应用: ${stats.apps}`);
+  console.log(`全局规则组: ${stats.globalRaw} -> ${stats.globalOut}`);
   console.log(`规则组: ${stats.groupsRaw} -> ${stats.groupsOut} (去重 ${stats.dupGroups})`);
   console.log(`规则: ${stats.rulesRaw} -> ${stats.rulesOut} (去重 ${stats.dupRules})`);
-  console.log(`输出: ${outPath}  version=${out.version}`);
+  console.log(`输出: ${outPath}  version=${version}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
