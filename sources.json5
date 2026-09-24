@@ -1,8 +1,21 @@
 {
   // ===== 合并选项 =====
+  // mergeMode:
+  //   "union"      = 全量并集: 所有源的同名规则组合并、规则去重(覆盖最广, 但选项多、体积大)
+  //   "base-first" = 主体优先(推荐): 第一个启用的源作为主体, 它覆盖的应用【只保留它自己的规则】,
+  //                  其他源只补充"主体源没有的应用" -> 产物更瘦、GKD 里选项更少
+  //                  全局规则组因为是通用兜底、数量很少, 仍然取并集
+  mergeMode: "base-first",
+
   // stripRuleMeta: true = 去掉规则的快照链接(snapshotUrls/exampleUrls), 产物体积约减小 15%,
   //                代价是 GKD 里看不到规则的快照截图; 默认 false(保留)
   stripRuleMeta: false,
+
+  // supplementApps: 例外白名单(仅 base-first 模式生效)
+  //   填应用包名, 这些应用即使主体源已覆盖, 也会把所有源的规则合并进来
+  //   用途: 个别 App 主力源跳不干净时, 单独把它加回来
+  //   例: supplementApps: ["com.tencent.mm", "com.eg.android.AlipayGphone"],
+  supplementApps: [],
 
   // ===== GKD 订阅源配置 =====
   // 增删订阅只需要改这个文件，然后重新运行合并即可

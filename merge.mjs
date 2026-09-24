@@ -121,16 +121,24 @@ async function fetchSource(src) {
 
 // ---------- 合并 ----------
 function mergeAll(subs) {
-  const stats = { apps: 0, groupsRaw: 0, groupsOut: 0, rulesRaw: 0, rulesOut: 0, dupGroups: 0, dupRules: 0, globalRaw: 0, globalOut: 0 };
+  const stats = { apps: 0, groupsRaw: 0, groupsOut: 0, rulesRaw: 0, rulesOut: 0, dupGroups: 0, dupRules: 0, globalRaw: 0, globalOut: 0, appsBase: 0, appsSupplement: 0, skippedShared: 0 };
+  // 主体优先模式: 第一个启用的源 = 主体源, 它覆盖的应用只保留它自己的规则(不合入其他源的写法),
+  // 其他源只补充"主体源没有的应用", 这样产物更瘦、GKD 里选项更少
+  const baseFirst = CONFIG.mergeMode === "base-first";
+  const baseAppIds = baseFirst && subs.length ? new Set((subs[0].apps || []).map((a) => a.id)) : null;
+  // 例外白名单: 即使主体源已覆盖, 也把所有源的规则都合并进来(用于个别 App 主力跳不干净的情况)
+  const supplementApps = new Set(CONFIG.supplementApps || []);
   // 分类合并
   const catMap = new Map();
   const appsMap = new Map(); // appId -> { id, name, groupsByName: Map }
   const ggMap = new Map(); // 全局规则组: name -> { g, rulesMap }
-  for (const sub of subs) {
+  for (let si = 0; si < subs.length; si++) {
+    const sub = subs[si];
+    const isSupplementOnly = baseFirst && si > 0; // 非主体源: 只补主体没有的应用
     for (const cat of sub.categories || []) {
       if (!catMap.has(cat.key)) catMap.set(cat.key, { key: cat.key, name: cat.name ?? cat.key, enableOrder: cat.enableOrder });
     }
-    // 全局规则组合并(名字聚合, 规则指纹去重, 首个源的组元信息优先)
+    // 全局规则组合并(名字聚合, 规则指纹去重, 首个源的组元信息优先; 全局组数量很少, 保持取并集以覆盖未知应用)
     for (const g of sub.globalGroups || []) {
       stats.globalRaw++;
       const ruleArr = Array.isArray(g.rules) ? g.rules : [];
@@ -145,10 +153,20 @@ function mergeAll(subs) {
     }
     for (const app of sub.apps || []) {
       if (!app.id) continue;
+      if (isSupplementOnly && baseAppIds.has(app.id) && !supplementApps.has(app.id)) {
+        // 主体源已覆盖该应用 -> 跳过(避免重复规则与选项膨胀)
+        for (const g of app.groups || []) {
+          stats.skippedShared++;
+          stats.groupsRaw++;
+          stats.rulesRaw += Array.isArray(g.rules) ? g.rules.length : 0;
+        }
+        continue;
+      }
       let target = appsMap.get(app.id);
       if (!target) {
         target = { id: app.id, name: app.name || app.id, groupsByName: new Map() };
         appsMap.set(app.id, target);
+        if (baseFirst) (isSupplementOnly ? stats.appsSupplement++ : stats.appsBase++);
       }
       if ((!target.name || target.name === target.id) && app.name) target.name = app.name;
       for (const g of app.groups || []) {
@@ -303,7 +321,8 @@ async function main() {
   console.log("\n===== 合并完成 =====");
   console.log(`内容变化: ${changed ? "有(版本号已递增)" : "无(版本号沿用, 手机端会显示无更新)"}`);
   console.log(`订阅源: ${subs.length} 个`);
-  console.log(`应用: ${stats.apps}`);
+  console.log(`应用: ${stats.apps}${stats.appsBase ? `  (主体 ${stats.appsBase} + 补充 ${stats.appsSupplement})` : ""}`);
+  if (stats.skippedShared) console.log(`主体已覆盖而跳过的组: ${stats.skippedShared} 个 (主体优先模式)`);
   console.log(`全局规则组: ${stats.globalRaw} -> ${stats.globalOut}`);
   console.log(`规则组: ${stats.groupsRaw} -> ${stats.groupsOut} (去重 ${stats.dupGroups})`);
   console.log(`规则: ${stats.rulesRaw} -> ${stats.rulesOut} (去重 ${stats.dupRules})`);
