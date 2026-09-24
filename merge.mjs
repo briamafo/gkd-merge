@@ -138,18 +138,23 @@ function mergeAll(subs) {
     for (const cat of sub.categories || []) {
       if (!catMap.has(cat.key)) catMap.set(cat.key, { key: cat.key, name: cat.name ?? cat.key, enableOrder: cat.enableOrder });
     }
-    // 全局规则组合并(名字聚合, 规则指纹去重, 首个源的组元信息优先; 全局组数量很少, 保持取并集以覆盖未知应用)
-    for (const g of sub.globalGroups || []) {
-      stats.globalRaw++;
-      const ruleArr = Array.isArray(g.rules) ? g.rules : [];
-      const gname = (g.name || "").trim();
-      const bkey = gname || `__anon_${stableStringify(g).slice(0, 40)}`;
-      let bucket = ggMap.get(bkey);
-      if (!bucket) {
-        bucket = { g, rulesMap: new Map() };
-        ggMap.set(bkey, bucket);
+    // 全局规则组: base-first 模式下只保留主体源的(其他源的全局组功能重复);
+    // union 模式下名字聚合、指纹去重、首源元信息优先
+    if (!isSupplementOnly) {
+      for (const g of sub.globalGroups || []) {
+        stats.globalRaw++;
+        const ruleArr = Array.isArray(g.rules) ? g.rules : [];
+        const gname = (g.name || "").trim();
+        const bkey = gname || `__anon_${stableStringify(g).slice(0, 40)}`;
+        let bucket = ggMap.get(bkey);
+        if (!bucket) {
+          bucket = { g, rulesMap: new Map() };
+          ggMap.set(bkey, bucket);
+        }
+        for (const r of ruleArr) bucket.rulesMap.set(ruleFingerprint(r), r);
       }
-      for (const r of ruleArr) bucket.rulesMap.set(ruleFingerprint(r), r);
+    } else {
+      stats.globalSkipped = (stats.globalSkipped || 0) + (sub.globalGroups || []).length;
     }
     for (const app of sub.apps || []) {
       if (!app.id) continue;
@@ -323,7 +328,7 @@ async function main() {
   console.log(`订阅源: ${subs.length} 个`);
   console.log(`应用: ${stats.apps}${stats.appsBase ? `  (主体 ${stats.appsBase} + 补充 ${stats.appsSupplement})` : ""}`);
   if (stats.skippedShared) console.log(`主体已覆盖而跳过的组: ${stats.skippedShared} 个 (主体优先模式)`);
-  console.log(`全局规则组: ${stats.globalRaw} -> ${stats.globalOut}`);
+  console.log(`全局规则组: ${stats.globalRaw} -> ${stats.globalOut}${stats.globalSkipped ? `  (base-first 模式: 跳过补充源 ${stats.globalSkipped} 个)` : ""}`);
   console.log(`规则组: ${stats.groupsRaw} -> ${stats.groupsOut} (去重 ${stats.dupGroups})`);
   console.log(`规则: ${stats.rulesRaw} -> ${stats.rulesOut} (去重 ${stats.dupRules})`);
   console.log(`输出: ${outPath}  version=${version}`);
