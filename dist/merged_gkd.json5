@@ -1,7 +1,7 @@
 {
  "id": 99,
  "name": "Merged-主流订阅合集",
- "version": 29847293,
+ "version": 29850124,
  "author": "WorkBuddy merge tool",
  "categories": [
   {
@@ -43842,7 +43842,8 @@
      "priorityTime": 10000,
      "activityIds": [
       ".plugin.appbrand.ui.AppBrandUI",
-      ".plugin.appbrand.launching.AppBrandLaunchProxyUI"
+      ".plugin.appbrand.launching.AppBrandLaunchProxyUI",
+      ".plugin.appbrand.ui.AppBrandPluginUI"
      ],
      "rules": [
       {
@@ -43856,7 +43857,8 @@
         "https://i.gkd.li/i/12785183",
         "https://i.gkd.li/i/13306883",
         "https://i.gkd.li/i/13407275",
-        "https://i.gkd.li/i/15108441"
+        "https://i.gkd.li/i/15108441",
+        "https://i.gkd.li/i/32969391"
        ]
       },
       {
