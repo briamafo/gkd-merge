@@ -1,7 +1,7 @@
 {
  "id": 99,
  "name": "Merged-主流订阅合集",
- "version": 29850124,
+ "version": 29851598,
  "author": "WorkBuddy merge tool",
  "categories": [
   {
@@ -63199,6 +63199,10 @@
     },
     {
      "id": "com.yingyonghui.market",
+     "enable": false
+    },
+    {
+     "id": "com.bambulab.creator",
      "enable": false
     },
     {
