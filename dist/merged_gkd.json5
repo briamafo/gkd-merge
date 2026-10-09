@@ -1,7 +1,7 @@
 {
  "id": 99,
  "name": "Merged-主流订阅合集",
- "version": 29855932,
+ "version": 29858829,
  "author": "WorkBuddy merge tool",
  "categories": [
   {
@@ -34555,7 +34555,7 @@
         },
         "duration": 200
        },
-       "excludeMatches": "([text=\"选集\"][visibleToUser=true]) || ([text*=\"网微剧备字\"][height>0])",
+       "excludeMatches": "([text=\"选集\"][visibleToUser=true]) || ([text*=\"剧备字\"][height>0])",
        "matches": "[text=\"选集\"][visibleToUser=false]",
        "snapshotUrls": [
         "https://i.gkd.li/i/32429827",
@@ -34565,7 +34565,8 @@
        "excludeSnapshotUrls": [
         "https://i.gkd.li/i/32430107",
         "https://i.gkd.li/i/32434872",
-        "https://i.gkd.li/i/32683026"
+        "https://i.gkd.li/i/32683026",
+        "https://i.gkd.li/i/33193929"
        ],
        "exampleUrls": [
         "https://e.gkd.li/0128820c-4e8d-44ed-9ebc-ef2d5a062e26",
@@ -47749,6 +47750,7 @@
     },
     {
      "name": "功能类-自动点击翻译",
+     "desc": "⚠️对于v12.9.1及以上版本的推特失效",
      "rules": [
       {
        "fastQuery": true,
