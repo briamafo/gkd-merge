@@ -1,7 +1,7 @@
 {
  "id": 99,
  "name": "Merged-主流订阅合集",
- "version": 29877467,
+ "version": 29878906,
  "author": "WorkBuddy merge tool",
  "categories": [
   {
@@ -14760,6 +14760,10 @@
      "name": "权限提示-通知权限",
      "desc": "点击\"取消\"",
      "fastQuery": true,
+     "activityIds": [
+      ".widget.ConfirmDialogBuilder",
+      ".pages.main.MainFragmentActivity"
+     ],
      "rules": [
       {
        "key": 0,
@@ -14767,10 +14771,6 @@
        "matchTime": 10000,
        "actionMaximum": 1,
        "resetMatch": "app",
-       "activityIds": [
-        ".widget.ConfirmDialogBuilder",
-        ".pages.main.MainFragmentActivity"
-       ],
        "matches": [
         "[text=\"开启推送提醒\"][visibleToUser=true]",
         "[text=\"取消\"][visibleToUser=true]"
@@ -14789,6 +14789,11 @@
         "[text=\"取消\"][visibleToUser=true]"
        ],
        "snapshotUrls": "https://i.gkd.li/i/27190449"
+      },
+      {
+       "key": 2,
+       "matches": "TextView[text=\"暂不开启\"] < @[clickable=true] <n View < View < ComposeView < * < * < [id=\"android:id/content\"]",
+       "snapshotUrls": "https://i.gkd.li/i/33832486"
       }
      ],
      "key": 1773332253
@@ -33637,6 +33642,21 @@
       }
      ],
      "key": 536714768
+    },
+    {
+     "name": "更新提示",
+     "matchTime": 10000,
+     "actionMaximum": 1,
+     "resetMatch": "app",
+     "rules": [
+      {
+       "fastQuery": true,
+       "activityIds": ".MainActivity",
+       "matches": "@ImageView[clickable=true][width<96] - [text*=\"新版本\"]",
+       "snapshotUrls": "https://i.gkd.li/i/33833127"
+      }
+     ],
+     "key": 32925654
     }
    ]
   },
@@ -35163,7 +35183,7 @@
        "key": 2,
        "activityIds": "com.tencent.upgrade.ui.UpgradeDialogActivity",
        "matches": "[vid=\"upgrade_dialog_close_btn\"]",
-       "snapshotUrls": "https://i.gkd.li/i/13116821"
+       "snapshotUrls": "https://i.gkd.li/i/33833374"
       }
      ],
      "key": 1710344852
@@ -38086,6 +38106,41 @@
      ],
      "enable": false,
      "key": 795636649
+    }
+   ]
+  },
+  {
+   "id": "com.sfexpress.knight",
+   "name": "顺丰同城骑士",
+   "groups": [
+    {
+     "name": "功能类-重复[刷新]导航",
+     "desc": "每隔1秒点击[导航-取]上方刷新",
+     "rules": [
+      {
+       "fastQuery": true,
+       "activityIds": ".home.HomeActivity",
+       "matches": "@[vid=\"locationFl\"] + [vid=\"recordFl\"] >2 [text=\"导航-取\"]",
+       "snapshotUrls": "https://i.gkd.li/i/33796598",
+       "exampleUrls": "https://e.gkd.li/abae860f-12d0-4e01-92a4-6331adfd8cba"
+      }
+     ],
+     "key": 15630175
+    },
+    {
+     "name": "功能类-自动[刷新]任务列表",
+     "desc": "每隔5秒点击1次[刷新列表]",
+     "rules": [
+      {
+       "fastQuery": true,
+       "actionCd": 5000,
+       "activityIds": ".home.HomeActivity",
+       "matches": "@[vid=\"llRefresh\"][clickable=true] >2 [text=\"刷新列表\"]",
+       "snapshotUrls": "https://i.gkd.li/i/33797305",
+       "exampleUrls": "https://e.gkd.li/b381ce15-5a3d-43b2-9834-76ef62887a35"
+      }
+     ],
+     "key": 1305798058
     }
    ]
   },
