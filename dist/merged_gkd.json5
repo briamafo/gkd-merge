@@ -1,7 +1,7 @@
 {
  "id": 99,
  "name": "Merged-主流订阅合集",
- "version": 29884680,
+ "version": 29886159,
  "author": "WorkBuddy merge tool",
  "categories": [
   {
@@ -2922,6 +2922,26 @@
       }
      ],
      "key": 1737487829
+    }
+   ]
+  },
+  {
+   "id": "cn.wanxue.newgaoshou",
+   "name": "海文考研",
+   "groups": [
+    {
+     "name": "功能类-[继续]用移动网络播放视频",
+     "desc": "点击[继续]",
+     "rules": [
+      {
+       "fastQuery": true,
+       "activityIds": ".learn1.modules.player.VideoActivity",
+       "matches": "@[text=\"继续\"] -n [vid=\"md_contentScrollView\"] > [text*=\"移动网络\"]",
+       "snapshotUrls": "https://i.gkd.li/i/34022280",
+       "exampleUrls": "https://e.gkd.li/7fb018c3-3842-4b44-bf41-add7c1f4c205"
+      }
+     ],
+     "key": 1779371280
     }
    ]
   },
@@ -18522,6 +18542,26 @@
    ]
   },
   {
+   "id": "com.gamestar.perfectpiano",
+   "name": "完美钢琴",
+   "groups": [
+    {
+     "name": "全屏广告-VIP会员弹窗",
+     "desc": "按[返回键]",
+     "rules": [
+      {
+       "fastQuery": true,
+       "action": "back",
+       "matches": "[text=\"已完成付费，恢复VIP状态?\"] -n [text*=\"永久VIP\"]",
+       "snapshotUrls": "https://i.gkd.li/i/34023961",
+       "exampleUrls": "https://e.gkd.li/8a52c238-04f7-4880-bc16-5f6c879ef034"
+      }
+     ],
+     "key": 711689314
+    }
+   ]
+  },
+  {
    "id": "com.generalcomp.batian",
    "name": "霸天安云",
    "groups": [
@@ -31762,6 +31802,46 @@
    ]
   },
   {
+   "id": "com.mmbox.xbrowser",
+   "name": "X浏览器",
+   "groups": [
+    {
+     "name": "功能类-自动允许打开外部App",
+     "desc": "是否允许打开外部应用? -> 允许",
+     "rules": [
+      {
+       "fastQuery": true,
+       "activityIds": ".BrowserActivity",
+       "matches": "[vid=\"message_bar\"][childCount=2] > [text=\"是否允许打开外部应用?\"][visibleToUser=true] + [text=\"允许\"][clickable=true]",
+       "snapshotUrls": "https://i.gkd.li/i/34007323",
+       "exampleUrls": "https://e.gkd.li/402beb6f-6777-423c-9db1-7f06ba46a034"
+      }
+     ],
+     "key": 592186982
+    }
+   ]
+  },
+  {
+   "id": "com.mmbox.xbrowser.pro",
+   "name": "X浏览器(Play)",
+   "groups": [
+    {
+     "name": "功能类-自动允许打开外部App",
+     "desc": "是否允许打开外部应用? -> 允许",
+     "rules": [
+      {
+       "fastQuery": true,
+       "activityIds": ".BrowserActivity",
+       "matches": "[vid=\"message_bar\"][childCount=2] > [text=\"是否允许打开外部应用?\"][visibleToUser=true] + [text=\"允许\"][clickable=true]",
+       "snapshotUrls": "https://i.gkd.li/i/34007323",
+       "exampleUrls": "https://e.gkd.li/402beb6f-6777-423c-9db1-7f06ba46a034"
+      }
+     ],
+     "key": 228669123
+    }
+   ]
+  },
+  {
    "id": "com.mmzztt.app",
    "name": "美之图",
    "groups": [
@@ -36776,14 +36856,12 @@
    "groups": [
     {
      "name": "全屏广告-弹窗广告",
-     "matchTime": 10000,
-     "actionMaximum": 1,
-     "resetMatch": "app",
+     "actionCd": 300,
+     "activityIds": ".MainActivity",
      "rules": [
       {
        "key": 0,
        "fastQuery": true,
-       "activityIds": ".MainActivity",
        "matches": "[vid=\"box_custom\"] >2 [vid=\"ivClose\"][clickable=true]",
        "snapshotUrls": [
         "https://i.gkd.li/i/31689742",
@@ -36792,7 +36870,6 @@
       },
       {
        "key": 1,
-       "activityIds": ".MainActivity",
        "matches": "View[childCount=3] > View + ImageView + ImageView[clickable=true][childCount=0]",
        "snapshotUrls": "https://i.gkd.li/i/13694864"
       }
@@ -48242,10 +48319,11 @@
       {
        "key": 2,
        "activityIds": "com.x.android.main.MainActivity",
-       "matches": "[text=\"Ad\" || getChild(0).text=\"已推广\"] +(1,4) ImageView[visibleToUser=true][desc=\"发帖选项\"]",
+       "matches": "[text=\"Ad\" || getChild(0).text$=\"推广\"] +(1,4) ImageView[visibleToUser=true][desc=\"发帖选项\"]",
        "snapshotUrls": [
         "https://i.gkd.li/i/29085434",
-        "https://i.gkd.li/i/32325884"
+        "https://i.gkd.li/i/32325884",
+        "https://i.gkd.li/i/34022771"
        ]
       },
       {
@@ -61217,8 +61295,11 @@
        "actionCd": 3000,
        "actionDelay": 300,
        "activityIds": "com.bilibili.ship.theseus.detail.UnitedBizDetailsActivity",
-       "matches": "@[desc=\"关闭弹幕\"] <2 View < View < [vid=\"danmaku_input_parent\"]",
-       "snapshotUrls": "https://i.gkd.li/i/33745857",
+       "matches": "@[desc=\"关闭弹幕\" || desc=\"Disable danmu\"] <2 View < View < [vid=\"danmaku_input_parent\"]",
+       "snapshotUrls": [
+        "https://i.gkd.li/i/33745857",
+        "https://i.gkd.li/i/34027203"
+       ],
        "excludeSnapshotUrls": "https://i.gkd.li/i/33745620",
        "exampleUrls": "https://e.gkd.li/abf8fe28-1d92-4603-9463-291f8ef66b92"
       }
