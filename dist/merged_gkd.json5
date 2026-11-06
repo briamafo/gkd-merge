@@ -1,7 +1,7 @@
 {
  "id": 99,
  "name": "Merged-主流订阅合集",
- "version": 29897743,
+ "version": 29899181,
  "author": "WorkBuddy merge tool",
  "categories": [
   {
@@ -5214,6 +5214,23 @@
       }
      ],
      "key": 1162192201
+    },
+    {
+     "name": "功能类-确认[未查询到此应用的 ICP 核准信息]",
+     "matchTime": 10000,
+     "resetMatch": "app",
+     "rules": [
+      {
+       "fastQuery": true,
+       "matches": [
+        "TextView[text*=\"未查询到此应用的 ICP 核准信息\"]",
+        "@Button[text=\"知道了\"] -n Button[text=\"取消安装\"]"
+       ],
+       "snapshotUrls": "https://i.gkd.li/i/34431696",
+       "activityIds": ".PackageInstallerActivity"
+      }
+     ],
+     "key": 610510282
     }
    ]
   },
@@ -9940,8 +9957,12 @@
       {
        "fastQuery": true,
        "activityIds": ".webapp.ui.WebAppViewerActivity",
-       "matches": "TextView[text=\"登录\"] < @View[clickable=true][desc=\"登录\"] < * - * > View[childCount=0][text=\"电脑端学习通登录确认\"] <<n [vid=\"web_view_fragment_refresh_layout\"]",
-       "snapshotUrls": "https://i.gkd.li/i/23280198"
+       "matches": "TextView[text=\"登录\"] < @View[clickable=true][desc=\"登录\"] <(4-n)  * <2 * ->2 View[childCount=0][text=\"电脑端学习通登录确认\"] - * <<2 * < WebView <(4-n) [vid=\"web_view_fragment_refresh_layout\"]",
+       "snapshotUrls": [
+        "https://i.gkd.li/i/23280198",
+        "https://i.gkd.li/i/34427110"
+       ],
+       "exampleUrls": "https://e.gkd.li/cb345983-44d1-4997-9906-0ff0b8c8f50d"
       }
      ],
      "key": 16098662
@@ -15241,6 +15262,32 @@
       }
      ],
      "key": 701976792
+    },
+    {
+     "name": "功能类-刷短剧时半自动[不喜听书]",
+     "desc": "前提需手动长按小说标签的视频, ①点击[不感兴趣] ②选择[不喜欢听书]",
+     "activityIds": ".pages.main.MainFragmentActivity",
+     "fastQuery": true,
+     "rules": [
+      {
+       "key": 0,
+       "name": "①点击[不感兴趣]",
+       "matches": "@[clickable=true] > TextView[vid=\"action_text\"][text=\"不感兴趣\"][visibleToUser=true]",
+       "snapshotUrls": "https://i.gkd.li/i/34419649",
+       "exampleUrls": "https://e.gkd.li/77dca54c-86b8-40a6-b00a-44e4f8adedf8"
+      },
+      {
+       "key": 1,
+       "preKeys": [
+        0
+       ],
+       "name": "②点击[不喜欢听书]",
+       "matches": "[text=\"不喜欢听书\"] < @[clickable=true][childCount=1] <n * - [text=\"选择不喜欢的理由\"] <2 View < ComposeView < * < * < [id=\"android:id/content\"]",
+       "snapshotUrls": "https://i.gkd.li/i/34419676",
+       "exampleUrls": "https://e.gkd.li/77dca54c-86b8-40a6-b00a-44e4f8adedf8"
+      }
+     ],
+     "key": 1309518157
     }
    ]
   },
@@ -42213,6 +42260,46 @@
       }
      ],
      "key": 1558794393
+    },
+    {
+     "name": "功能类-自动开启[自动连播]",
+     "desc": "仅在刚进抖音时第1个视频生效, ①[长按]视频 ②开启[自动联播]",
+     "fastQuery": true,
+     "matchRoot": true,
+     "actionMaximum": 1,
+     "resetMatch": "app",
+     "activityIds": ".main.MainActivity",
+     "rules": [
+      {
+       "key": 1,
+       "name": "①[长按]视频",
+       "action": "longClickCenter",
+       "matches": "[vid=\"viewpager\"][desc=\"视频\"][childCount=2][visibleToUser=true]",
+       "snapshotUrls": "https://i.gkd.li/i/34400931",
+       "excludeSnapshotUrls": "https://i.gkd.li/i/34424096"
+      },
+      {
+       "key": 2,
+       "preKeys": [
+        1
+       ],
+       "name": "②开启[自动联播]",
+       "matches": "@Switch[clickable=true][checked=false] - [text=\"自动连播\"]",
+       "snapshotUrls": "https://i.gkd.li/i/34400219"
+      },
+      {
+       "key": 3,
+       "preKeys": [
+        1
+       ],
+       "name": "③已开-按[返回键]",
+       "action": "back",
+       "actionMaximumKey": 2,
+       "matches": "@Switch[clickable=true][checked=true] - [text=\"自动连播\"]",
+       "snapshotUrls": "https://i.gkd.li/i/34400216"
+      }
+     ],
+     "key": 460422191
     }
    ]
   },
@@ -42529,6 +42616,49 @@
       }
      ],
      "key": 869783304
+    },
+    {
+     "name": "功能类-自动开启[自动连播]",
+     "desc": "仅在刚进抖极时第1个视频生效, ①[长按]视频 ②开启[自动联播]",
+     "fastQuery": true,
+     "matchRoot": true,
+     "actionMaximum": 1,
+     "resetMatch": "app",
+     "activityIds": "com.ss.android.ugc.aweme.main.MainActivity",
+     "rules": [
+      {
+       "key": 1,
+       "name": "①[长按]视频",
+       "action": "longClickCenter",
+       "matches": "[vid=\"viewpager\"][desc=\"视频\"][childCount=2][visibleToUser=true]",
+       "snapshotUrls": "https://i.gkd.li/i/34420783",
+       "excludeSnapshotUrls": "https://i.gkd.li/i/34418998"
+      },
+      {
+       "key": 2,
+       "preKeys": [
+        1
+       ],
+       "name": "②开启[自动联播]",
+       "matches": "@Switch[clickable=true][checked=false] - [text=\"自动连播\"]",
+       "snapshotUrls": [
+        "https://i.gkd.li/i/34423078",
+        "https://i.gkd.li/i/34419001"
+       ]
+      },
+      {
+       "key": 3,
+       "preKeys": [
+        1
+       ],
+       "name": "③已开-按[返回键]",
+       "action": "back",
+       "actionMaximumKey": 2,
+       "matches": "@Switch[clickable=true][checked=true] - [text=\"自动连播\"]",
+       "snapshotUrls": "https://i.gkd.li/i/34421280"
+      }
+     ],
+     "key": 1262365407
     }
    ]
   },
@@ -48774,9 +48904,10 @@
       {
        "key": 2,
        "activityIds": "com.x.android.main.MainActivity",
-       "matches": "[text=\"Ad\" || getChild(0).text$=\"推广\"] +(1,4) ImageView[visibleToUser=true][desc=\"发帖选项\"]",
+       "matches": "[text=\"Ad\" || getChild(0).text$=\"推广\"] +(1,4) [name$=\"ImageView\" || name$=\"Button\"][visibleToUser=true][desc=\"发帖选项\"]",
        "snapshotUrls": [
         "https://i.gkd.li/i/29085434",
+        "https://i.gkd.li/i/34428571",
         "https://i.gkd.li/i/32325884",
         "https://i.gkd.li/i/34022771"
        ]
