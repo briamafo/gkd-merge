@@ -1,7 +1,7 @@
 {
  "id": 99,
  "name": "Merged-主流订阅合集",
- "version": 29902016,
+ "version": 29903500,
  "author": "WorkBuddy merge tool",
  "categories": [
   {
@@ -18526,14 +18526,20 @@
      "matchTime": 5000,
      "actionMaximum": 1,
      "resetMatch": "app",
+     "activityIds": ".MainActivity",
      "rules": [
       {
-       "activityIds": ".MainActivity",
+       "key": 0,
        "matches": "@Button[clickable=true] -4 * > [desc=\"代理\"]",
        "snapshotUrls": [
         "https://i.gkd.li/i/26210674",
         "https://i.gkd.li/i/29658034"
        ]
+      },
+      {
+       "key": 1,
+       "matches": "[desc=\"代理\"] + [visibleToUser=true] > [desc=\"延迟测试\"][clickable=true]",
+       "snapshotUrls": "https://i.gkd.li/i/34530552"
       }
      ],
      "key": 1138731429
@@ -41849,7 +41855,7 @@
      "rules": [
       {
        "fastQuery": true,
-       "actionCd": 300,
+       "actionCd": 1200,
        "actionDelay": 200,
        "swipeArg": {
         "start": {
@@ -41890,7 +41896,6 @@
      "rules": [
       {
        "fastQuery": true,
-       "actionCd": 300,
        "actionDelay": 200,
        "swipeArg": {
         "start": {
@@ -41919,7 +41924,6 @@
      "rules": [
       {
        "fastQuery": true,
-       "actionCd": 300,
        "actionDelay": 200,
        "swipeArg": {
         "start": {
